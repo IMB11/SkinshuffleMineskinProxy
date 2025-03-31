@@ -19,4 +19,5 @@ repositories {
 dependencies {
     implementation("org.mineskin:java-client:3.0.2")
     implementation("org.mineskin:java-client-jsoup:3.0.2")
+    implementation("io.javalin:javalin:6.5.0")
 }
