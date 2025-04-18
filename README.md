@@ -6,4 +6,4 @@ Simply create an API key on the mineskin website, add the `SkinShuffle/Proxy` us
 
 ## Usage
 
-Clone the repository, create a `local.properties` in the resources folder, run `gradlew run`. Done! Change the proxy domain and port in your skinshuffle config in your minecraft instance.
+Clone the repository, run `gradlew run` with the env variables specified in `.env.example` pre-exported using `export` (bash) or `$Env:... = ...` (windows). Done! Change the proxy domain and port in your skinshuffle config in your minecraft instance.

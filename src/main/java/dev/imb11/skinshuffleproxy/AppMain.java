@@ -14,11 +14,7 @@ import org.mineskin.request.GenerateRequest;
 import org.mineskin.response.MineSkinResponse;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Optional;
-import java.util.Properties;
-import java.util.UUID;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -28,20 +24,25 @@ public class AppMain {
     private static final Gson gson = new Gson();
     private static final ConcurrentMap<String, byte[]> receivedFiles = new ConcurrentHashMap<>();
 
+    // Environment variable names
+    private static final String ENV_MINESKIN_TOKEN = "TOKEN_MINESKIN";
+    private static final String ENV_APP_PORT = "APP_PORT";
+    private static final String ENV_APP_USERAGENT = "APP_USERAGENT";
+
     public static void main(String[] args) {
         System.out.println("Launching SkinShuffle WebSocket Gateway");
 
-        Properties props = loadProgramProperties();
-        if (props == null) return;
-
-        String mineskinApiKey = props.getProperty("token.mineskin");
-        String appUserAgent = props.getProperty("app.useragent");
-        int appPort = Integer.parseInt(props.getProperty("app.port"));
-
-        if ("REPLACE_ME".equals(mineskinApiKey)) {
-            System.err.println("Error: Please replace 'REPLACE_ME' with your actual MineSkin API key in local.properties");
+        // Get required configuration from environment variables
+        String mineskinApiKey = System.getenv(ENV_MINESKIN_TOKEN);
+        if (mineskinApiKey == null || mineskinApiKey.isEmpty() || mineskinApiKey.equals("REPLACE_ME")) {
+            System.err.println("Error: " + ENV_MINESKIN_TOKEN + " environment variable must be set");
+            System.exit(1);
             return;
         }
+
+        // Get optional configuration with defaults
+        String appUserAgent = getEnvOrDefault(ENV_APP_USERAGENT, "SkinShuffle/Proxy");
+        int appPort = Integer.parseInt(getEnvOrDefault(ENV_APP_PORT, "28433"));
 
         mineskinClient = MineSkinClient.builder()
                 .apiKey(mineskinApiKey)
@@ -140,18 +141,21 @@ public class AppMain {
         app.start(appPort);
     }
 
-    private static Properties loadProgramProperties() {
-        Properties properties = new Properties();
-        try (InputStream input = AppMain.class.getClassLoader().getResourceAsStream("local.properties")) {
-            if (input == null) {
-                System.out.println("Sorry, unable to find local.properties");
-                return null;
-            }
-            properties.load(input);
-            return properties;
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            return null;
+    /**
+     * Gets a value from environment variables with a fallback to default
+     * 
+     * @param name Environment variable name
+     * @param defaultValue Default value if environment variable is not set
+     * @return The value from environment variable or default
+     */
+    private static String getEnvOrDefault(String name, String defaultValue) {
+        String value = System.getenv(name);
+        if (value != null && !value.isEmpty()) {
+            System.out.println("Using " + name + " from environment: " + value);
+            return value;
         }
+        
+        System.out.println("Using default value for " + name + ": " + defaultValue);
+        return defaultValue;
     }
 }
